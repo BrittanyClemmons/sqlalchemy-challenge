@@ -1,7 +1,10 @@
+from flask import Flask, jsonify
+app = Flask(__name__)
+
 # Importing Dependencies
 import numpy as np
 import pandas as pd
-from datetime import datetime as dt
+import datetime as dt
 from datetime import timedelta
 
 
@@ -12,15 +15,15 @@ engine = db.create_engine('sqlite:///Resources/hawaii.sqlite')
 connection = engine.connect()
 metadata = db.MetaData()
 
+M = db.Table('measurement', metadata, autoload=True, autoload_with=engine)
+S = db.Table('station', metadata, autoload=True, autoload_with=engine)
 
-
-# Flask Setup
-from flask import Flask, jsonify
-app = Flask(__name__)
+# Confirmation that data is being return from database connection
+print(M.columns.keys())
+print(S.columns.keys())
 
 
 # Routes
-
 # List all routes
 @app.route("/")
 def welcome():
@@ -37,10 +40,27 @@ def welcome():
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    year_ago = date(2017, 8, 23) - timedelta(days = 365)
+    year_ago = dt(year: 2017, month: 8, day: 23) - timedelta(days = 365)
 
-    query = db.select([M.columns.date, M.columns.prcp]).where(M.columns.date >= year_ago)
+    query = db.select([M.columns.date, M.columns.prcp]).where([M.columns.date] >= year_ago)
     precip_data = connection.execute(query).fetchall()
 
     precip = {date: prcp for date, prcp in precip_data}
     return jsonify(precip)
+
+
+@app.route("/api/v1.0/stations")
+def stations():
+    query = db.select([S.columns.station])
+    call_stations = connection.execute(query).fetchall()
+
+    stations = list(np.ravel(call_stations))
+
+
+    return stations
+
+stations()
+
+
+if __name__== '__main__':
+    app.run()
